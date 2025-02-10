@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gökçe's Valentine Surprise</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Great Vibes', cursive;
+        }
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #ff3366;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.3);
+        }
+        button {
+            font-family: 'Great Vibes', cursive;
+            font-size: 24px;
+            padding: 10px 30px;
+            margin: 10px;
+            background: #ff3366;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        button:hover {
+            transform: scale(1.1);
+            background: #ff1a53;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="message">
+        <h1 style="font-size: 3em; margin: 0">Dearest Gökçe Ayşeee~ ,</h1>
+        <p style="font-size: 2em; margin: 20px 0">My soulmate I humbly kneel to you<br> Would you be my Valentine?</p>
+        <button onclick="respond(true)">Yes! 🌹</button>
+        <button onmouseover="moveNoButton()" onclick="respond(false)">Maybe...?</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer;
+        let flowers = [];
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // Create flower field
+            createFlowerField();
+
+            camera.position.z = 10;
+            camera.position.y = 2;
+            animate();
+        }
+
+        function createFlowerPetal(color, size, rotation) {
+            // Create a petal using a custom shape
+            const petalShape = new THREE.Shape();
+            petalShape.moveTo(0, 0);
+            petalShape.quadraticCurveTo(size, size/2, 0, size);
+            petalShape.quadraticCurveTo(-size, size/2, 0, 0);
+
+            const extrudeSettings = {
+                steps: 1,
+                depth: 0.1,
+                bevelEnabled: true,
+                bevelThickness: 0.02,
+                bevelSize: 0.05,
+                bevelSegments: 3
+            };
+
+            const petalGeometry = new THREE.ExtrudeGeometry(petalShape, extrudeSettings);
+            const petalMaterial = new THREE.MeshPhongMaterial({ 
+                color: color,
+                shininess: 30
+            });
+            const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+            
+            // Rotate and position the petal
+            petal.rotation.x = Math.PI / 2;
+            petal.rotation.y = rotation;
+            
+            return petal;
+        }
+
+        function createFlower() {
+            const flower = new THREE.Group();
+            
+            // Flower center (pistil)
+            const centerGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+            const centerMaterial = new THREE.MeshPhongMaterial({ color: 0xFFD700 }); // Golden yellow
+            const center = new THREE.Mesh(centerGeometry, centerMaterial);
+            flower.add(center);
+
+            // Create multiple petals
+            const petalColors = [
+                0xFF69B4,  // Hot Pink
+                0xFF1493,  // Deep Pink
+                0xDDA0DD,  // Plum
+                0xFF6347,  // Tomato
+                0xFF4500   // Orange Red
+            ];
+
+            const petalCount = 6;
+            for (let i = 0; i < petalCount; i++) {
+                const petal = createFlowerPetal(
+                    petalColors[Math.floor(Math.random() * petalColors.length)], 
+                    0.5, 
+                    (Math.PI * 2 * i) / petalCount
+                );
+                flower.add(petal);
+            }
+
+            // Stem
+            const stemGeometry = new THREE.CylinderGeometry(0.05, 0.1, 2, 8);
+            const stemMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 }); // Forest Green
+            const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+            stem.position.y = -1;
+            flower.add(stem);
+
+            // Randomize flower position
+            flower.position.x = (Math.random() - 0.5) * 20;
+            flower.position.z = (Math.random() - 0.5) * 20;
+            flower.position.y = Math.random() * 2;
+
+            // Add some random rotation
+            flower.rotation.x = Math.random() * Math.PI / 4;
+            flower.rotation.z = Math.random() * Math.PI / 4;
+
+            return flower;
+        }
+
+        function createFlowerField() {
+            for(let i = 0; i < 100; i++) {
+                const flower = createFlower();
+                flowers.push(flower);
+                scene.add(flower);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Gentle swaying animation
+            flowers.forEach((flower, index) => {
+                flower.rotation.x += Math.sin(Date.now() * 0.001 + index) * 0.005;
+                flower.rotation.z += Math.cos(Date.now() * 0.001 + index) * 0.005;
+            });
+
+            // Orbiting camera
+            camera.position.x = Math.sin(Date.now() * 0.0005) * 10;
+            camera.position.z = Math.cos(Date.now() * 0.0005) * 10;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        function respond(answer) {
+            if(answer) {
+                document.body.style.background = "radial-gradient(circle, #ff99cc, #ff3366)";
+                document.getElementById("message").innerHTML = `
+                    <h1 style="font-size: 3em; margin: 0">Yay! 💖</h1>
+                    <p style="font-size: 2em; margin: 20px 0">You've just made this the best Valentine's Day ever!</p>
+                `;
+            } else {
+                document.getElementById("message").innerHTML = `
+                    <h1 style="font-size: 3em; margin: 0">🥺 Please?</h1>
+                    <p style="font-size: 2em; margin: 20px 0">I'll keep trying until you say yes!</p>
+                `;
+                setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        function moveNoButton() {
+            const noButton = document.getElementsByTagName("button")[1];
+            noButton.style.position = 'absolute';
+            noButton.style.left = Math.random() * 80 + '%';
+            noButton.style.top = Math.random() * 80 + '%';
+        }
+
+        window.onload = init;
+        window.onresize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+    </script>
+</body>
+</html>
